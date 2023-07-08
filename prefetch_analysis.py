@@ -220,16 +220,32 @@ def parse_Volume(f, index):
     f.seek(Info_VolumesInfoOffset + (index * offset_end))
     volume = f.read(offset_end)
 
+    directory_string_offset = int.from_bytes(volume[offset_DirectoryStringOffset:offset_NumberDirectoryStrings], "little")
+    number_directory_string = int.from_bytes(volume[offset_NumberDirectoryStrings:offset_unknown1], "little")
+    volume_device_path_offset = int.from_bytes(volume[:offset_NumberVolumeDevicePath], "little")
+    number_volume_device_path = int.from_bytes(volume[offset_NumberVolumeDevicePath:offset_VolumeCreateTime], "little")
+
+    f.seek(Info_VolumesInfoOffset + (index * offset_end) + volume_device_path_offset)
+    volume_device_path_string = f.read(number_volume_device_path * 2).decode('utf+8')
+    
+    f.seek(Info_VolumesInfoOffset + (index * offset_end) + directory_string_offset)
+    directory_string_size = int.from_bytes(f.read(2), "little")
+    directory_string = f.read(directory_string_size * 2).decode('utf-8')
+
     print("\n=====Volume(" + hex(Info_VolumesInfoOffset + (index * offset_end)) + ")=====")
-    print("Volume Device Path Offset: " + hex(int.from_bytes(volume[:offset_NumberVolumeDevicePath], "little")))
-    print("Number Volume Device Path: " + hex(int.from_bytes(volume[offset_NumberVolumeDevicePath:offset_VolumeCreateTime], "little")))
+    print("Volume Device Path Offset: " + hex(volume_device_path_offset))
+    print("Number Volume Device Path: " + hex(number_volume_device_path))
     print("Volume Create Time: " + hex(int.from_bytes(volume[offset_VolumeCreateTime:offset_VolumeSerialNumber], "little")))
     print("Volume Serial Number: " + hex(int.from_bytes(volume[offset_VolumeSerialNumber:offset_FileReferencesOffset], "little")))
     print("File References Offset: " + hex(int.from_bytes(volume[offset_FileReferencesOffset:offset_FileReferencesDataSize], "little")))
     print("File References Data Size: " + hex(int.from_bytes(volume[offset_FileReferencesDataSize:offset_DirectoryStringOffset], "little")))
-    print("Directory String Offset: " + hex(int.from_bytes(volume[offset_DirectoryStringOffset:offset_NumberDirectoryStrings], "little")))
-    print("Number Directory Strings: " + hex(int.from_bytes(volume[offset_NumberDirectoryStrings:offset_unknown1], "little")))
+    print("Directory String Offset: " + hex(directory_string_offset))
+    print("Number Directory Strings: " + hex(number_directory_string))
     print("Copy Number Directory Strings: " + hex(int.from_bytes(volume[offset_CopyNumberDirectoryStrings:offset_Unknwon2], "little")))
+
+    print("\nVolume device path string: " + volume_device_path_string)
+    print("Directory string: " + directory_string)
+    print("Directory string size: " + str(directory_string_size))
 
 def print_header():
     print("\n=========header=========")
